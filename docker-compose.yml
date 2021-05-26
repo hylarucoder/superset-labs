@@ -1,0 +1,70 @@
+version: "3.7"
+x-superset-common:
+  &superset-common
+  image: superset:local
+  environment:
+    &superset-common-env
+    SUPERSET_CONFIG_PATH: /opt/superset/superset_config.py
+    FLASK_ENV: development
+    FLASK_APP: superset
+  volumes:
+    - ./compose/superset:/opt/superset
+  depends_on:
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+
+
+services:
+  superset-web:
+    <<: *superset-common
+    command: ["gunicorn", "-w", "10", "-k", "gevent", "-b", "0.0.0.0:8000", "--log-level", "INFO",  "superset.app:create_app()"]
+    ports:
+      - "8000:8000"
+
+  superset-beat:
+    <<: *superset-common
+    command: ["celery", "beat", "--app=superset.tasks.celery_app:app", "-l", "INFO"]
+
+  superset-worker:
+    <<: *superset-common
+    command: ["celery", "worker", "--app=superset.tasks.celery_app:app", "-Ofair", "-l", "INFO"]
+
+  superset-toolbox:
+    <<: *superset-common
+    command: ["sleep", "5d"]
+
+  superset-flower:
+    <<: *superset-common
+    command: ["celery", "flower", "--app=superset.tasks.celery_app:app", "-l", "INFO"]
+
+  redis:
+    image: redis:latest
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+    restart: always
+
+  postgres:
+    image: postgres:13
+    restart: always
+    environment:
+      - DATABASE_HOST=127.0.0.1
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - ./compose/postgres/docker_postgres_init.sql:/docker-entrypoint-initdb.d/docker_postgres_init.sql
+      - ./postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+

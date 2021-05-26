@@ -1,9 +1,5 @@
 from celery.schedules import crontab
 
-# from werkzeug.contrib.cache import RedisCache
-
-# RESULTS_BACKEND = RedisCache(host='localhost', port=6379, key_prefix='superset_results')
-
 # ---------------------------------------------------------
 # Superset specific config
 # ---------------------------------------------------------
@@ -14,7 +10,7 @@ SUPERSET_WEBSERVER_PORT = 8088
 
 SECRET_KEY = "\2\1thisismyscretkey\1\2\e\y\y\h"
 
-SQLALCHEMY_DATABASE_URI = "postgresql://superset:superset@localhost/superset"
+SQLALCHEMY_DATABASE_URI = "postgresql://superset:superset123@postgres/superset"
 
 # ---------------------------------------------------------
 # Flask App Builder configuration
@@ -36,22 +32,24 @@ CACHE_CONFIG = {
     "CACHE_TYPE": "redis",
     "CACHE_DEFAULT_TIMEOUT": 60 * 60 * 24,  # 1 day default (in secs)
     "CACHE_KEY_PREFIX": "superset_results",
-    "CACHE_REDIS_URL": "redis://localhost:6379/2",
+    "CACHE_REDIS_URL": "redis://redis:6379/1",
 }
 
 
 class CeleryConfig(object):
-    BROKER_URL = "redis://localhost:6379/2"
+    BROKER_URL = "redis://redis:6379/2"
     CELERY_IMPORTS = (
         "superset.sql_lab",
         "superset.tasks",
     )
-    CELERY_RESULT_BACKEND = "redis://localhost:6379/2"
+    CELERY_RESULT_BACKEND = "redis://redis:6379/3"
     CELERYD_LOG_LEVEL = "DEBUG"
     CELERYD_PREFETCH_MULTIPLIER = 10
     CELERY_ACKS_LATE = True
     CELERY_ANNOTATIONS = {
-        "sql_lab.get_sql_results": {"rate_limit": "100/s",},
+        "sql_lab.get_sql_results": {
+            "rate_limit": "100/s",
+        },
         "email_reports.send": {
             "rate_limit": "1/s",
             "time_limit": 120,
@@ -78,15 +76,14 @@ class CeleryConfig(object):
 
 CELERY_CONFIG = CeleryConfig
 
-MAPBOX_API_KEY = ""
-
+MAPBOX_API_KEY = "1"
 
 # Uncomment to setup Your App name
 APP_NAME = "Superset"
 
 # Uncomment to setup an App icon
-APP_ICON = "/static/assets/images/superset-logo@2x.png"
-APP_ICON_WIDTH = 126
+# APP_ICON = "/static/assets/images/superset-logo@2x.png"
+# APP_ICON_WIDTH = 126
 
 BABEL_DEFAULT_LOCALE = "zh"
 BABEL_DEFAULT_FOLDER = "superset/translations"
